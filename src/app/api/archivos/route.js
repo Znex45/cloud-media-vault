@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { listarArchivos, ErrorConsultaArchivos } from "@/server/archivos/listarArchivos";
 import { guardarMetadatos } from "@/server/archivos/guardarMetadatos";
 import { eliminarDeCloudinary, subirACloudinary } from "@/server/archivos/subirACloudinary";
 import { ErrorValidacionArchivo, validarArchivo } from "@/server/archivos/validarArchivo";
@@ -67,4 +68,20 @@ export async function POST(request) {
   }
 }
 
-
+/** GET /api/archivos?tipo=imagen|video|pdf&q=texto */
+export async function GET(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const archivos = await listarArchivos({
+      tipo: searchParams.get("tipo") ?? "",
+      q: searchParams.get("q") ?? "",
+    });
+    return NextResponse.json({ ok: true, archivos }, { status: 200 });
+  } catch (error) {
+    if (error instanceof ErrorConsultaArchivos) {
+      return respuestaError(error.message, error.status);
+    }
+    console.error("No fue posible consultar los archivos en MongoDB.");
+    return respuestaError("No fue posible consultar los archivos.", 500);
+  }
+}
